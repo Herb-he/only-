@@ -16,6 +16,16 @@
 #include <QNetworkReply>
 #include <QSslError>
 #include <QProcess>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QFrame>
+#include <QSizePolicy>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QDialog>
+#include <QTimer>
+#include <QPixmap>
+#include <QLineEdit>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -24,7 +34,33 @@ Widget::Widget(QWidget *parent)
     ui->setupUi(this);
     networkManager = new QNetworkAccessManager(this);
     
-    setupUI();
+    // Initialize member variables to point to UI elements
+    fromCityCombo = ui->fromCityCombo;
+    toCityCombo = ui->toCityCombo;
+    allowTransferCheck = ui->allowTransferCheck;
+    searchButton = ui->searchButton;
+    resultText = ui->resultText;
+    flightRadio = ui->flightRadio;
+    trainRadio = ui->trainRadio;
+    bothRadio = ui->bothRadio;
+    dateEdit = ui->dateEdit;
+    detailButton = ui->detailButton;
+    customUrlEdit = ui->customUrlEdit;
+    
+    // Set up the dateEdit to default to tomorrow
+    dateEdit->setDate(QDate::currentDate().addDays(1));
+    dateEdit->setMinimumDate(QDate::currentDate());
+    
+    // Create transport type button group
+    transportTypeGroup = new QButtonGroup(this);
+    transportTypeGroup->addButton(flightRadio, 0);
+    transportTypeGroup->addButton(trainRadio, 1);
+    transportTypeGroup->addButton(bothRadio, 2);
+    
+    // Hide detail button initially
+    detailButton->setVisible(false);
+    
+    // Connect signals and slots
     loadCityCodes();
     
     connect(searchButton, &QPushButton::clicked, this, &Widget::onSearchClicked);
@@ -33,13 +69,10 @@ Widget::Widget(QWidget *parent)
     connect(transportTypeGroup, QOverload<int>::of(&QButtonGroup::buttonClicked),
             this, &Widget::onTransportTypeChanged);
             
-    // 初始化curl进程
+    // Initialize curl process
     curlProcess = nullptr;
     
-    // 添加详细信息按钮（初始为隐藏状态）
-    detailButton = new QPushButton("查看详细航班信息（含中转站）", this);
     connect(detailButton, &QPushButton::clicked, this, &Widget::onDetailButtonClicked);
-    detailButton->setVisible(false);
 }
 
 Widget::~Widget()
@@ -52,73 +85,6 @@ Widget::~Widget()
         delete curlProcess;
     }
     delete ui;
-}
-
-void Widget::setupUI()
-{
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    
-    // 创建交通方式选择区域
-    QGroupBox *transportTypeBox = new QGroupBox("交通方式", this);
-    QHBoxLayout *transportLayout = new QHBoxLayout(transportTypeBox);
-    
-    flightRadio = new QRadioButton("飞机", this);
-    trainRadio = new QRadioButton("火车", this);
-    bothRadio = new QRadioButton("综合查询", this);
-    
-    transportTypeGroup = new QButtonGroup(this);
-    transportTypeGroup->addButton(flightRadio, 0);
-    transportTypeGroup->addButton(trainRadio, 1);
-    transportTypeGroup->addButton(bothRadio, 2);
-    
-    flightRadio->setChecked(true); // 默认选择飞机
-    
-    transportLayout->addWidget(flightRadio);
-    transportLayout->addWidget(trainRadio);
-    transportLayout->addWidget(bothRadio);
-    
-    // 创建城市选择区域
-    QHBoxLayout *cityLayout = new QHBoxLayout();
-    fromCityCombo = new QComboBox(this);
-    toCityCombo = new QComboBox(this);
-    cityLayout->addWidget(new QLabel("出发城市:", this));
-    cityLayout->addWidget(fromCityCombo);
-    cityLayout->addWidget(new QLabel("到达城市:", this));
-    cityLayout->addWidget(toCityCombo);
-    
-    // 创建日期选择
-    QHBoxLayout *dateLayout = new QHBoxLayout();
-    dateEdit = new QDateEdit(QDate::currentDate().addDays(1), this);
-    dateEdit->setCalendarPopup(true);
-    dateEdit->setMinimumDate(QDate::currentDate());
-    dateLayout->addWidget(new QLabel("出发日期:", this));
-    dateLayout->addWidget(dateEdit);
-    dateLayout->addStretch();
-    
-    // 创建选项区域
-    QHBoxLayout *optionsLayout = new QHBoxLayout();
-    allowTransferCheck = new QCheckBox("允许中转", this);
-    optionsLayout->addWidget(allowTransferCheck);
-    
-    // 创建搜索按钮
-    searchButton = new QPushButton("搜索", this);
-    
-    // 创建结果显示区域
-    resultText = new QTextEdit(this);
-    resultText->setReadOnly(true);
-    
-    // 添加所有组件到主布局
-    mainLayout->addWidget(transportTypeBox);
-    mainLayout->addLayout(cityLayout);
-    mainLayout->addLayout(dateLayout);
-    mainLayout->addLayout(optionsLayout);
-    mainLayout->addWidget(searchButton);
-    mainLayout->addWidget(resultText);
-    mainLayout->addWidget(detailButton); // 添加详细信息按钮
-    
-    setLayout(mainLayout);
-    setWindowTitle("交通票价查询");
-    resize(800, 600);
 }
 
 void Widget::loadCityCodes()
@@ -363,16 +329,22 @@ void Widget::parseFlightData(const QJsonObject &obj)
     qDebug() << "开始解析航班数据...";
     qDebug() << "顶层JSON结构:" << obj.keys();
     
+    // 在显示数据之前，确保详情按钮可见
+    detailButton->setVisible(true);
+    detailButton->setEnabled(false);  // 先设置为禁用状态，等有数据时再启用
+    
     // 显示解析结果
-    QString resultStr = "查询结果：\n";
-    resultStr += "====================================\n";
+    QString resultStr = "<html><body style='font-family: Arial; color: #333;'>";
+    resultStr += "<h2 style='color: #2c3e50; margin-bottom: 15px;'>查询结果</h2>";
+    resultStr += "<div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #3498db;'>";
     
     // 首先检查是否有错误信息
     if (obj.contains("status") && obj["status"].toInt() != 0) {
         int status = obj["status"].toInt();
         QString message = obj.contains("msg") ? obj["msg"].toString() : "未知错误";
-        resultStr += QString("API返回错误: 状态码=%1, 信息=%2\n").arg(status).arg(message);
-        resultText->setText(resultStr + "\n完整返回数据:\n" + QJsonDocument(obj).toJson(QJsonDocument::Indented));
+        resultStr += QString("<p style='color: #e74c3c;'><b>API返回错误:</b> 状态码=%1, 信息=%2</p>").arg(status).arg(message);
+        resultStr += "</div></body></html>";
+        resultText->setHtml(resultStr);
         return;
     }
     
@@ -409,72 +381,80 @@ void Widget::parseFlightData(const QJsonObject &obj)
                 
                 // 显示最低价格信息
                 if (lowestPrice < INT_MAX) {
-                    resultStr += QString("最低票价: %1 CNY (日期: %2)\n")
+                    resultStr += QString("<div style='background-color: #dff0d8; padding: 15px; border-radius: 5px; margin-bottom: 20px;'>"
+                                       "<h3 style='color: #27ae60; margin-top: 0;'>最低票价</h3>"
+                                       "<p style='font-size: 24px; font-weight: bold; color: #e74c3c;'>¥ %1</p>"
+                                       "<p>出行日期: %2</p>"
+                                       "</div>")
                                 .arg(lowestPrice)
                                 .arg(formatDate(lowestPriceDate));
                     
                     // 关于中转站的说明
-                    resultStr += "\n注意: 最低价格API不提供中转站信息。";
-                    resultStr += "\n要获取包含中转站的详细信息，请点击下面的「查看详细」按钮。\n\n";
+                    resultStr += "<div style='background-color: #fcf8e3; padding: 10px; border-radius: 5px; margin-bottom: 15px;'>";
+                    resultStr += "<p><i>注意: 最低价格API不提供中转站信息。要获取包含中转站的详细信息，请点击下方的「查看详细」按钮。</i></p>";
+                    resultStr += "</div>";
                     
                     // 存储最低价格日期，供详细查询使用
                     lowestPriceFlightDate = lowestPriceDate;
+                    
+                    // 显示详细按钮并启用
+                    detailButton->setEnabled(true);
                 }
                 
                 // 显示价格列表
-                resultStr += "票价日历 (日期 - 价格):\n";
-                resultStr += "-----------------------------------\n";
+                resultStr += "<h3 style='color: #2c3e50; margin-top: 20px;'>票价日历</h3>";
+                resultStr += "<p style='color: #7f8c8d; font-size: 12px;'>显示所有可用日期的票价信息</p>";
+                resultStr += "<table style='width: 100%; border-collapse: collapse;'>";
+                resultStr += "<tr style='background-color: #3498db; color: white;'>"
+                           "<th style='padding: 8px; text-align: left;'>日期</th>"
+                           "<th style='padding: 8px; text-align: right;'>价格 (CNY)</th>"
+                           "</tr>";
                 
                 // 排序日期
                 QStringList dates = datePriceMap.keys();
                 std::sort(dates.begin(), dates.end());
                 
-                // 每行显示3个日期-价格对
-                int count = 0;
+                bool alternateRow = false;
                 for (const QString &date : dates) {
-                    resultStr += QString("%1: %2元  ")
-                               .arg(formatDate(date))
-                               .arg(datePriceMap[date]);
-                    
-                    count++;
-                    if (count % 3 == 0) {
-                        resultStr += "\n";
+                    QString rowStyle = alternateRow ? 
+                                    "background-color: #f2f2f2;" : 
+                                    "background-color: white;";
+                                    
+                    QString priceStyle = "";
+                    if (date == lowestPriceDate) {
+                        rowStyle = "background-color: #dff0d8;";
+                        priceStyle = "color: #27ae60; font-weight: bold;";
                     }
-                }
-                
-                if (count % 3 != 0) {
-                    resultStr += "\n";
-                }
-                
-                // 创建"查看详细"按钮
-                if (!detailButton) {
-                    detailButton = new QPushButton("查看详细航班信息（含中转站）", this);
-                    connect(detailButton, &QPushButton::clicked, this, &Widget::onDetailButtonClicked);
                     
-                    // 添加按钮到界面
-                    QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(this->layout());
-                    if (layout) {
-                        // 在结果文本框和搜索按钮之间添加
-                        layout->insertWidget(layout->indexOf(resultText) + 1, detailButton);
-                    }
+                    resultStr += QString("<tr style='%1'>"
+                                       "<td style='padding: 8px; border-bottom: 1px solid #ddd;'>%2</td>"
+                                       "<td style='padding: 8px; border-bottom: 1px solid #ddd; text-align: right; %3'>¥ %4</td>"
+                                       "</tr>")
+                                .arg(rowStyle)
+                                .arg(formatDate(date))
+                                .arg(priceStyle)
+                                .arg(datePriceMap[date]);
+                                
+                    alternateRow = !alternateRow;
                 }
                 
-                // 显示按钮
-                detailButton->setVisible(true);
-                detailButton->setEnabled(true);
+                resultStr += "</table>";
+                
             } else {
-                resultStr += "无法解析价格数据格式\n";
+                resultStr += "<p style='color: #e74c3c;'>无法解析价格数据格式</p>";
             }
         } else {
-            resultStr += "未找到价格数据\n";
+            resultStr += "<p style='color: #e74c3c;'>未找到价格数据</p>";
         }
     } else {
-        resultStr += "API返回数据中没有找到data字段\n";
-        resultText->setText(resultStr + "\n完整返回数据:\n" + QJsonDocument(obj).toJson(QJsonDocument::Indented));
+        resultStr += "<p style='color: #e74c3c;'>API返回数据中没有找到data字段</p>";
+        resultStr += "</div></body></html>";
+        resultText->setHtml(resultStr);
         return;
     }
     
-    resultText->setText(resultStr);
+    resultStr += "</div></body></html>";
+    resultText->setHtml(resultStr);
 }
 
 void Widget::onDetailButtonClicked()
@@ -487,18 +467,71 @@ void Widget::onDetailButtonClicked()
     QString fromCode = fromCityCombo->currentData().toString();
     QString toCode = toCityCombo->currentData().toString();
     
-    // 显示正在查询的信息
-    resultText->setText(resultText->toPlainText() + "\n\n正在查询详细航班信息，包括中转站点...");
+    // 创建加载对话框
+    QDialog *loadingDialog = new QDialog(this, Qt::Dialog | Qt::FramelessWindowHint);
+    loadingDialog->setStyleSheet(
+        "QDialog { background-color: rgba(255, 255, 255, 0.9); border-radius: 10px; }"
+    );
     
-    // 查询特定日期的详细航班信息
-    searchFlightDetails(fromCode, toCode, lowestPriceFlightDate);
+    QVBoxLayout *dialogLayout = new QVBoxLayout(loadingDialog);
+    
+    QLabel *loadingIcon = new QLabel(loadingDialog);
+    loadingIcon->setAlignment(Qt::AlignCenter);
+    loadingIcon->setPixmap(QPixmap(":/icons/loading.gif").scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    
+    QLabel *loadingLabel = new QLabel("正在打开详细航班信息...", loadingDialog);
+    loadingLabel->setAlignment(Qt::AlignCenter);
+    loadingLabel->setStyleSheet("font-size: 14px; color: #333; font-weight: bold; margin: 10px;");
+    
+    dialogLayout->addWidget(loadingIcon);
+    dialogLayout->addWidget(loadingLabel);
+    
+    // 设置对话框大小和位置
+    loadingDialog->setFixedSize(250, 150);
+    loadingDialog->move(this->geometry().center() - loadingDialog->rect().center());
+    
+    // 显示加载对话框
+    loadingDialog->show();
+    
+    // 使用计时器延迟调用浏览器
+    QTimer::singleShot(800, [=]() {
+        // 调用详细信息查询
+        searchFlightDetails(fromCode, toCode, lowestPriceFlightDate);
+        
+        // 关闭加载对话框
+        loadingDialog->close();
+        loadingDialog->deleteLater();
+    });
 }
 
 void Widget::searchFlightDetails(const QString &fromCode, const QString &toCode, const QString &dateStr)
 {
-    // 这里需要使用不同的API来获取详细航班信息，包括中转站
-    // 由于携程没有公开提供详细API文档，这里提供一个示例实现
+    // 检查是否有自定义URL
+    if (!customUrlEdit->text().isEmpty()) {
+        // 使用用户提供的URL
+        QString customUrl = customUrlEdit->text();
+        
+        // 如果用户没有输入http前缀，添加它
+        if (!customUrl.startsWith("http://") && !customUrl.startsWith("https://")) {
+            customUrl = "https://" + customUrl;
+        }
+        
+        // 添加状态信息
+        resultText->setText(resultText->toPlainText() + 
+                           "\n\n正在打开浏览器访问自定义URL...");
+        
+        // 使用默认浏览器打开URL
+        bool success = QDesktopServices::openUrl(QUrl(customUrl));
+        
+        if (!success) {
+            QMessageBox::warning(this, "错误", 
+                                "无法打开浏览器。请手动访问以下链接查看详细航班信息:\n\n" + customUrl);
+        }
+        
+        return;
+    }
     
+    // 如果没有自定义URL，使用原来的逻辑
     // 解析日期为 QDate 对象
     QDate date;
     if (dateStr.length() == 8) {
@@ -514,21 +547,36 @@ void Widget::searchFlightDetails(const QString &fromCode, const QString &toCode,
     // 构建详细信息URL
     QString dateFormatted = date.toString("yyyy-MM-dd");
     
-    QString message = QString("要获取包含中转站的详细航班信息，请访问携程网站:\n\n"
-                            "https://flights.ctrip.com/online/list/oneway-%1-%2?depdate=%3\n\n"
-                            "目前API不直接提供中转站信息，需要在网页上查看。")
-                            .arg(fromCode.toLower())
-                            .arg(toCode.toLower())
-                            .arg(dateFormatted);
+    // 构建携程网站URL
+    QString url = QString("https://flights.ctrip.com/online/list/oneway-%1-%2?depdate=%3")
+                         .arg(fromCode.toLower())
+                         .arg(toCode.toLower())
+                         .arg(dateFormatted);
+                         
+    // 更新URL输入框
+    customUrlEdit->setText(url);
     
-    QMessageBox::information(this, "详细航班信息", message);
+    // 添加状态信息
+    resultText->setText(resultText->toPlainText() + 
+                       "\n\n正在打开浏览器查看含中转站的详细航班信息...");
+    
+    // 使用默认浏览器打开URL
+    bool success = QDesktopServices::openUrl(QUrl(url));
+    
+    if (!success) {
+        QMessageBox::warning(this, "错误", 
+                            "无法打开浏览器。请手动访问以下链接查看详细航班信息:\n\n" + url);
+    }
 }
 
 QString Widget::formatDate(const QString &dateStr)
 {
     // 将"20250523"格式转换为"2025-05-23"
     if (dateStr.length() == 8) {
-        return dateStr.mid(0, 4) + "-" + dateStr.mid(4, 2) + "-" + dateStr.mid(6, 2);
+        return QString("%1-%2-%3")
+              .arg(dateStr.mid(0, 4))
+              .arg(dateStr.mid(4, 2)) 
+              .arg(dateStr.mid(6, 2));
     }
     return dateStr;
 }

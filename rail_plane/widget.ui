@@ -7,12 +7,496 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>907</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Widget</string>
+   <string>交通票价查询系统</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget { background-color: #f5f5f7; font-family: Arial, sans-serif; }
+QComboBox { padding: 6px; border: 1px solid #ccc; border-radius: 4px; background-color: white; }
+QComboBox::drop-down { subcontrol-origin: padding; subcontrol-position: right; width: 20px; border-left: none; }
+QComboBox::down-arrow { image: url(down_arrow.png); width: 12px; height: 12px; }
+QComboBox:focus { border: 1px solid #3498db; }
+QPushButton { background-color: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+QPushButton:hover { background-color: #2980b9; }
+QPushButton:pressed { background-color: #1f618d; }
+QPushButton#detailButton { background-color: #27ae60; }
+QPushButton#detailButton:hover { background-color: #219955; }
+QCheckBox { color: #333; spacing: 8px; }
+QCheckBox::indicator { width: 16px; height: 16px; border: 1px solid #ccc; border-radius: 3px; }
+QCheckBox::indicator:checked { background-color: #3498db; }
+QRadioButton { color: #333; spacing: 8px; }
+QRadioButton::indicator { width: 15px; height: 15px; border: 1px solid #ccc; border-radius: 8px; }
+QRadioButton::indicator:checked { background-color: #3498db; border: 2px solid white; }
+QGroupBox { border: 1px solid #ccc; border-radius: 5px; margin-top: 1em; padding-top: 15px; }
+QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }
+QTextEdit { border: 1px solid #ccc; border-radius: 4px; padding: 8px; background-color: white; color: #333; }
+QLabel { color: #333; }</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <property name="spacing">
+    <number>15</number>
+   </property>
+   <property name="leftMargin">
+    <number>20</number>
+   </property>
+   <property name="topMargin">
+    <number>20</number>
+   </property>
+   <property name="rightMargin">
+    <number>20</number>
+   </property>
+   <property name="bottomMargin">
+    <number>20</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="titleLabel">
+     <property name="styleSheet">
+      <string notr="true">font-size: 20px; font-weight: bold; color: #2c3e50; margin-bottom: 10px;</string>
+     </property>
+     <property name="text">
+      <string>交通票价查询系统</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="headerCard">
+     <property name="styleSheet">
+      <string notr="true">QFrame { background-color: white; border-radius: 8px; border: 1px solid #e0e0e0; }</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="headerLayout">
+      <property name="spacing">
+       <number>15</number>
+      </property>
+      <property name="leftMargin">
+       <number>15</number>
+      </property>
+      <property name="topMargin">
+       <number>15</number>
+      </property>
+      <property name="rightMargin">
+       <number>15</number>
+      </property>
+      <property name="bottomMargin">
+       <number>15</number>
+      </property>
+      <item>
+       <widget class="QGroupBox" name="transportTypeBox">
+        <property name="title">
+         <string>交通方式</string>
+        </property>
+        <layout class="QHBoxLayout" name="transportLayout">
+         <property name="spacing">
+          <number>30</number>
+         </property>
+         <property name="leftMargin">
+          <number>10</number>
+         </property>
+         <property name="topMargin">
+          <number>15</number>
+         </property>
+         <property name="rightMargin">
+          <number>10</number>
+         </property>
+         <property name="bottomMargin">
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QRadioButton" name="flightRadio">
+           <property name="text">
+            <string>飞机</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="trainRadio">
+           <property name="text">
+            <string>火车</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="bothRadio">
+           <property name="text">
+            <string>综合查询</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="cityLayout">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="fromLabel">
+          <property name="minimumSize">
+           <size>
+            <width>80</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>出发城市:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="fromCityCombo">
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="toLabel">
+          <property name="minimumSize">
+           <size>
+            <width>80</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>到达城市:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="toCityCombo">
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="optionsLayout">
+        <property name="spacing">
+         <number>15</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="dateLabel">
+          <property name="minimumSize">
+           <size>
+            <width>80</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>出发日期:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDateEdit" name="dateEdit">
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="displayFormat">
+           <string>yyyy年MM月dd日</string>
+          </property>
+          <property name="calendarPopup">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="allowTransferCheck">
+          <property name="text">
+           <string>允许中转</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="searchLayout">
+        <item>
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="searchButton">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="text">
+           <string>开始搜索</string>
+          </property>
+          <property name="default">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="resultCard">
+     <property name="styleSheet">
+      <string notr="true">QFrame { background-color: white; border-radius: 8px; border: 1px solid #e0e0e0; }</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="resultLayout">
+      <property name="leftMargin">
+       <number>15</number>
+      </property>
+      <property name="topMargin">
+       <number>15</number>
+      </property>
+      <property name="rightMargin">
+       <number>15</number>
+      </property>
+      <property name="bottomMargin">
+       <number>15</number>
+      </property>
+      <item>
+       <widget class="QFrame" name="detailFrame">
+        <property name="styleSheet">
+         <string notr="true">QFrame { background-color: #f5f5f7; border-radius: 8px; margin-top: 10px; padding: 10px; }</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="detailLayout">
+         <item>
+          <widget class="QLabel" name="detailLabel">
+           <property name="styleSheet">
+            <string notr="true">font-weight: bold; font-size: 16px; color: #2c3e50; text-align: center;</string>
+           </property>
+           <property name="text">
+            <string>详细信息查询</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="detailContentLayout">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <item>
+            <layout class="QHBoxLayout" name="urlLayout">
+             <item>
+              <widget class="QLabel" name="urlLabel">
+               <property name="styleSheet">
+                <string notr="true">font-size: 14px; font-weight: bold;</string>
+               </property>
+               <property name="text">
+                <string>网址:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="customUrlEdit">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>35</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QLineEdit { padding: 5px 10px; border: 2px solid #3498db; border-radius: 6px; font-size: 13px; }</string>
+               </property>
+               <property name="placeholderText">
+                <string>输入自定义URL或使用系统生成的URL</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QPushButton" name="detailButton">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>45</height>
+              </size>
+             </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">QPushButton#detailButton { background-color: #e74c3c; color: white; font-weight: bold; font-size: 14px; border-radius: 6px; } 
+QPushButton#detailButton:hover { background-color: #c0392b; }</string>
+             </property>
+             <property name="text">
+              <string>查看详细航班信息（含中转站）</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="resultLabel">
+        <property name="styleSheet">
+         <string notr="true">font-weight: bold; font-size: 14px; color: #333;</string>
+        </property>
+        <property name="text">
+         <string>查询结果</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTextEdit" name="resultText">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>250</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QTextEdit { font-family: 'Consolas', 'Monaco', monospace; }</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="footerLabel">
+     <property name="styleSheet">
+      <string notr="true">color: #7f8c8d; margin-top: 5px;</string>
+     </property>
+     <property name="text">
+      <string>© 2023 交通票价查询系统 | 数据来源: 携程API</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

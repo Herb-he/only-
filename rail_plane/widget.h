@@ -6,6 +6,7 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QLineEdit>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QJsonDocument>
@@ -59,6 +60,7 @@ private:
     QProcess *curlProcess;
     QByteArray curlOutput;
     QPushButton *detailButton = nullptr;
+    QLineEdit *customUrlEdit = nullptr;
     QString lowestPriceFlightDate;
     
     void setupUI();
