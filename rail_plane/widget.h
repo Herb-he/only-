@@ -18,6 +18,8 @@
 #include <QDate>
 #include <QSslError>
 #include <QProcess>
+#include <QCalendarWidget>
+#include <QLabel>
 #include <limits> // 用于INT_MAX
 
 QT_BEGIN_NAMESPACE
@@ -43,6 +45,11 @@ private slots:
     void onCurlStandardError();
     void onCurlFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void onDetailButtonClicked();
+    void onTrainCurlStandardOutput();
+    void onTrainCurlStandardError();
+    void onTrainCurlFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void onCalendarButtonClicked();
+    void onCalendarDateSelected(const QDate &date);
 
 private:
     Ui::Widget *ui;
@@ -56,7 +63,9 @@ private:
     QRadioButton *trainRadio;
     QRadioButton *bothRadio;
     QButtonGroup *transportTypeGroup;
-    QDateEdit *dateEdit;
+    QPushButton *calendarButton;
+    QCalendarWidget *calendarWidget;
+    QLabel *selectedDateValue;
     QProcess *curlProcess;
     QByteArray curlOutput;
     QPushButton *detailButton = nullptr;
@@ -65,11 +74,17 @@ private:
     
     void setupUI();
     void loadCityCodes();
+    void applyModernUIStyle();
     QString getCityCode(const QString &cityName);
     void searchFlightPrice(const QString &fromCode, const QString &toCode, bool direct, const QDate &date);
     void searchTrainPrice(const QString &fromCode, const QString &toCode, const QDate &date);
     void parseFlightData(const QJsonObject &obj);
+    void parseTrainData(const QJsonObject &obj);
     QString formatDate(const QString &dateStr);
+    QString formatPrice(const QString &priceStr);
+    QString convertToTrainStation(const QString &cityCode);
     void searchFlightDetails(const QString &fromCode, const QString &toCode, const QString &dateStr);
+    void openFlightDetails();
+    void openTrainDetails();
 };
 #endif // WIDGET_H
